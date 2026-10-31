@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Butter Days - 3D Bakery Shop</title>
+    <!-- Spline 3D Viewer Script -->
+    <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.5/build/spline-viewer.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #fde8ed;
+        }
+
+        /* 3D Background Scene Canvas */
+        .spline-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* UI Layer Overlay */
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 24px;
+        }
+
+        .interactive {
+            pointer-events: auto;
+        }
+
+        /* Header UI */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 16px 28px;
+            border-radius: 24px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 30px rgba(230, 100, 150, 0.15);
+        }
+
+        .brand-title {
+            color: #d84374;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .cart-badge {
+            background: #e85d88;
+            color: #ffffff;
+            padding: 10px 22px;
+            border-radius: 50px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(232, 93, 136, 0.35);
+            transition: all 0.2s ease;
+        }
+
+        .cart-badge:hover {
+            transform: translateY(-2px);
+            background: #d84374;
+        }
+
+        /* Floating Order Card */
+        .order-card {
+            align-self: flex-end;
+            background: rgba(255, 255, 255, 0.92);
+            padding: 24px;
+            border-radius: 24px;
+            width: 340px;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 15px 35px rgba(216, 67, 116, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .order-card h3 {
+            color: #2b2b2b;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .order-card p {
+            color: #7a7a7a;
+            font-size: 13px;
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 18px;
+        }
+
+        .price-amount {
+            color: #e85d88;
+            font-size: 20px;
+        }
+
+        .btn-checkout {
+            background: linear-gradient(135deg, #e85d88, #d84374);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 14px;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(232, 93, 136, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .btn-checkout:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(232, 93, 136, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 3D Interactive Scene -->
+    <div class="spline-container">
+        <spline-viewer url="https://prod.spline.design/6Wq1Q7YGyM-iab9i/scene.splinecode"></spline-viewer>
+    </div>
+
+    <!-- UI Overlay Controls -->
+    <div class="ui-overlay">
+        <header class="interactive">
+            <div class="brand-title">✨ Butter Days Bakery</div>
+            <div class="cart-badge" onclick="alert('Viewing Cart!')">
+                <span>🛒 Cart</span>
+                <span id="cart-total">$30.50</span>
+            </div>
+        </header>
+
+        <div class="order-card interactive">
+            <h3>Good things come in pink.</h3>
+            <p>Click on any 3D pastry items to place them into your bakery bag.</p>
+            
+            <div class="price-row">
+                <span>Total Amount</span>
+                <span class="price-amount">$30.50</span>
+            </div>
+
+            <button class="btn-checkout" onclick="alert('Order placed successfully! 🎉')">
+                Place Order Now
+            </button>
+        </div>
+    </div>
+
+</body>
+</html>
