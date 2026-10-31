@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Butter Days Bakery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;800&family=Nunito:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pink:#f7c6d0; --pink-deep:#e98fa6; --cream:#fff6ea; --brown:#6b4435; --butter:#ffe9a8;
+  }
+  *{box-sizing:border-box;margin:0}
+  html,body{height:100%;overflow:hidden;background:linear-gradient(160deg,#ffe3ea,#fff6ea);font-family:'Nunito',sans-serif;color:var(--brown)}
+  #scene{position:fixed;inset:0;width:100%;height:100%;display:block}
+
+  /* Header */
+  header{position:fixed;top:18px;left:24px;z-index:5;pointer-events:none}
+  header h1{font-family:'Fraunces',serif;font-weight:800;font-size:2rem;color:var(--pink-deep);letter-spacing:.5px}
+  header p{font-size:.9rem;opacity:.8}
+
+  /* Cart button */
+  #cartBtn{position:fixed;top:18px;right:24px;z-index:6;border:0;cursor:pointer;
+    background:var(--cream);color:var(--brown);font-weight:700;font-size:1rem;
+    padding:12px 20px;border-radius:999px;box-shadow:0 6px 20px rgba(233,143,166,.35)}
+  #cartBtn span{background:var(--pink-deep);color:#fff;border-radius:999px;padding:2px 9px;margin-left:8px}
+
+  /* Cart panel */
+  #cart{position:fixed;top:0;right:0;height:100%;width:min(380px,92vw);z-index:7;
+    background:rgba(255,246,234,.96);backdrop-filter:blur(10px);padding:24px;
+    transform:translateX(105%);transition:transform .35s ease;box-shadow:-10px 0 40px rgba(233,143,166,.3);
+    display:flex;flex-direction:column}
+  #cart.open{transform:none}
+  #cart h2{font-family:'Fraunces',serif;color:var(--pink-deep);margin-bottom:12px;display:flex;justify-content:space-between}
+  #close{background:none;border:0;font-size:1.5rem;cursor:pointer;color:var(--brown)}
+  #items{flex:1;overflow:auto;list-style:none;padding:0}
+  #items li{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px dashed var(--pink)}
+  #items .name{flex:1;font-weight:700}
+  #items button{border:0;background:var(--pink);color:var(--brown);width:26px;height:26px;border-radius:50%;cursor:pointer;font-weight:800}
+  .empty{opacity:.6;padding:20px 0}
+  .total{display:flex;justify-content:space-between;font-size:1.3rem;font-weight:800;margin:14px 0}
+  #checkout{border:0;cursor:pointer;background:var(--pink-deep);color:#fff;font-weight:800;font-size:1.05rem;
+    padding:14px;border-radius:16px;box-shadow:0 8px 20px rgba(233,143,166,.5);transition:transform .15s}
+  #checkout:hover{transform:translateY(-2px)} #checkout:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+  /* Menu bar (fallback + accessible buttons) */
+  #menu{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:5;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;padding:0 12px}
+  .item{border:0;cursor:pointer;background:var(--cream);border-radius:18px;padding:10px 16px;font-weight:700;color:var(--brown);
+    box-shadow:0 6px 16px rgba(233,143,166,.3);transition:transform .15s}
+  .item:hover{transform:translateY(-3px)}
+  .item small{display:block;font-weight:500;opacity:.75}
+
+  /* Loader + toast */
+  #loader{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:var(--cream);transition:opacity .5s}
+  #loader.hide{opacity:0;pointer-events:none}
+  #loader div{font-family:'Fraunces',serif;font-size:1.6rem;color:var(--pink-deep)}
+  #notice{position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:5;background:var(--butter);padding:8px 16px;border-radius:12px;font-size:.85rem;display:none}
+  #toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--brown);color:#fff;
+    padding:10px 18px;border-radius:999px;opacity:0;transition:.3s;z-index:30;pointer-events:none}
+  #toast.show{opacity:1;transform:translateX(-50%)}
+</style>
+</head>
+<body>
+
+<div id="loader"><div>🥐 Baking your bakery…</div></div>
+<canvas id="scene"></canvas>
+
+<header><h1>Butter Days</h1><p>Fresh pastries · baked with love</p></header>
+<div id="notice">Demo mode: add your Spline scene URL in <code>index.html</code> (see SPLINE_GUIDE.md)</div>
+
+<button id="cartBtn" aria-label="Open cart">🛒 Cart <span id="count">0</span></button>
+
+<div id="menu"></div>
+
+<aside id="cart" aria-label="Shopping cart">
+  <h2>Your Basket <button id="close" aria-label="Close">×</button></h2>
+  <ul id="items"></ul>
+  <div class="total"><span>Total</span><span id="total">$0.00</span></div>
+  <button id="checkout" disabled>Checkout</button>
+</aside>
+<div id="toast"></div>
+
+<script type="module">
+  import { Application } from 'https://esm.sh/@splinetool/runtime';
+
+  /* ============ CONFIG ============ */
+  // Paste your exported Spline scene URL here (Export → Code → Vanilla JS → .splinecode URL)
+  const SCENE_URL = 'https://prod.spline.design/YOUR-SCENE-ID/scene.splinecode';
+
+  // Product catalog. "object" must EXACTLY match the object name in your Spline scene.
+  const PRODUCTS = {
+    croissant:    { object: 'Croissant',    label: 'Croissant',      emoji: '🥐', price: 4.50 },
+    cinnamonRoll: { object: 'CinnamonRoll', label: 'Cinnamon Roll',  emoji: '🍥', price: 5.50 },
+    cookie:       { object: 'Cookie',       label: 'Choc Chip Cookie', emoji: '🍪', price: 3.50 },
+  };
+  const REGISTER_OBJECT = 'CashRegister';   // clicking it opens the cart
+  const TOTAL_VARIABLE  = 'total';          // optional Spline text variable shown on the register
+  const CHECKOUT_URL    = '';               // e.g. a Stripe Payment Link. Empty = demo alert.
+
+  /* ============ STATE ============ */
+  const cart = {}; // key -> qty
+  const $ = id => document.getElementById(id);
+  const money = n => '$' + n.toFixed(2);
+  let app = null;
+
+  const total = () => Object.entries(cart).reduce((s,[k,q]) => s + PRODUCTS[k].price*q, 0);
+  const count = () => Object.values(cart).reduce((s,q) => s+q, 0);
+
+  function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1400); }
+
+  function add(key){ cart[key]=(cart[key]||0)+1; render(); toast(`${PRODUCTS[key].emoji} ${PRODUCTS[key].label} added`); }
+  function remove(key){ if(!cart[key])return; cart[key]--; if(!cart[key]) delete cart[key]; render(); }
+
+  function render(){
+    const list = $('items'); list.innerHTML = '';
+    const keys = Object.keys(cart);
+    if(!keys.length) list.innerHTML = '<li class="empty">Your basket is empty 🥯</li>';
+    keys.forEach(k=>{
+      const p=PRODUCTS[k], li=document.createElement('li');
+      li.innerHTML = `<span>${p.emoji}</span><span class="name">${p.label}</span>
+        <button data-a="-" aria-label="Remove one">−</button><b>${cart[k]}</b>
+        <button data-a="+" aria-label="Add one">+</button><span>${money(p.price*cart[k])}</span>`;
+      li.querySelector('[data-a="-"]').onclick=()=>remove(k);
+      li.querySelector('[data-a="+"]').onclick=()=>add(k);
+      list.appendChild(li);
+    });
+    $('count').textContent = count();
+    $('total').textContent = money(total());
+    $('checkout').disabled = !count();
+    // Push the total to the 3D cash register's text (Spline variable)
+    try { app?.setVariable(TOTAL_VARIABLE, money(total())); } catch(e){}
+  }
+
+  /* ============ UI WIRING ============ */
+  const menu = $('menu');
+  Object.entries(PRODUCTS).forEach(([key,p])=>{
+    const b=document.createElement('button'); b.className='item';
+    b.innerHTML=`${p.emoji} ${p.label}<small>${money(p.price)} · add</small>`;
+    b.onclick=()=>add(key); menu.appendChild(b);
+  });
+  $('cartBtn').onclick = () => $('cart').classList.add('open');
+  $('close').onclick   = () => $('cart').classList.remove('open');
+  $('checkout').onclick = () => {
+    if(CHECKOUT_URL){ window.location.href = CHECKOUT_URL; return; }
+    alert(`Thank you! 🧈 Order total: ${money(total())}\n(Connect Stripe in CHECKOUT_URL to take real payments.)`);
+    Object.keys(cart).forEach(k=>delete cart[k]); render(); $('cart').classList.remove('open');
+  };
+  render();
+
+  /* ============ SPLINE ============ */
+  const canvas = $('scene');
+  const hideLoader = () => $('loader').classList.add('hide');
+
+  if (SCENE_URL.includes('YOUR-SCENE-ID')) {
+    $('notice').style.display = 'block';
+    setTimeout(hideLoader, 600);
+  } else {
+    app = new Application(canvas);
+    app.load(SCENE_URL).then(() => {
+      hideLoader();
+      render();
+
+      // Click 3D pastries to add them; click the register to open the cart
+      app.addEventListener('mouseDown', e => {
+        const name = e.target?.name;
+        if (!name) return;
+        const key = Object.keys(PRODUCTS).find(k => PRODUCTS[k].object === name);
+        if (key) add(key);
+        else if (name === REGISTER_OBJECT) $('cart').classList.add('open');
+      });
+    }).catch(err => {
+      console.error(err); hideLoader();
+      $('notice').textContent = 'Could not load the Spline scene. Check SCENE_URL.';
+      $('notice').style.display = 'block';
+    });
+  }
+</script>
+</body>
+</html>
